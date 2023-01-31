@@ -1,1 +1,14 @@
-var a = "test";
+//test
+(var a = "test"; )
+fun a = ("hello")
+
+
+
+
+/*
+*/
+a
+
+fun b = {
+    a * c
+  }

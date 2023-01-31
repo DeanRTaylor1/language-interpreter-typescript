@@ -18,7 +18,7 @@ class Lox {
   }
   private static runFile(path: string): void {
     const src = fs.readFileSync(__dirname + path, { encoding: "utf8" })
-    console.log(src)
+    Lox.run(src)
     if (this.hadError) {
       process.exit(65);
     }
@@ -60,7 +60,7 @@ class Lox {
   }
 
   private static report(line: number, where: string, message: string): void {
-    console.error(`[line ] ${line} ] Error${where}: ${message}`);
+    console.error(`[@line >> ${line} ] Error${where}: ${message}`);
     Lox.hadError = true;
   }
 }
