@@ -1,4 +1,4 @@
-import { Lox } from '.';
+import { Lox } from './index';
 import { TokenType, Token } from './token-type'
 
 class Scanner {

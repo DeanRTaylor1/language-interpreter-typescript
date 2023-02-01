@@ -1,9 +1,18 @@
 import fs from 'fs';
 import { createInterface } from 'readline'
+import { AstPrinter } from './ast-printer';
+import { RuntimeError } from './errors';
+import { Expr } from './Expr';
+import { Interpreter } from './interpreter';
+import { Parser } from './parser';
 import { Scanner } from './scanner';
+import { Token, TokenType } from './token-type';
 
 class Lox {
+  private static readonly interpreter: Interpreter = new Interpreter();
+
   public static hadError: Boolean = false;
+  public static hadRuntimeError: Boolean = false;
 
 
   public static main(): void {
@@ -48,15 +57,32 @@ class Lox {
   private static run(src: string): void {
     const scanner = new Scanner(src);
     const tokens = scanner.scanTokens();
-
-    for (let token of tokens) {
-      console.log(token)
-    }
-
+    const parser = new Parser(tokens)
+    const expression: Expr = parser.parse();
+    //console.log(expression)
+    if (this.hadError) process.exit(65);
+    if (this.hadRuntimeError) process.exit(70)
+    this.interpreter.interpret(expression)
+    //console.log(expression)
+    /* for (let token of tokens) {*/
+    /*console.log(token)*/
+    /*}*/
+    //console.log(new AstPrinter().print(expression))
   }
-
+  static tokenError(token: Token, message: string) {
+    if (token.type === TokenType.EOF) {
+      this.report(token.line, " at end", message)
+    } else {
+      this.report(token.line, ` at ${token.lexeme}'`, message)
+    }
+  }
   static err(line: number, message: string) {
     Lox.report(line, "", message);
+  }
+
+  static runtimeError(error: RuntimeError) {
+    console.error(error.message + " \r\n[line" + error.token.line + "]")
+    this.hadRuntimeError = true;
   }
 
   private static report(line: number, where: string, message: string): void {

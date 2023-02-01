@@ -1,14 +1,1 @@
-//test
-(var a = "test"; )
-fun a = ("hello")
-
-
-
-
-/*
-*/
-a
-
-fun b = {
-    a * c
-  }
+(123)+456 + (1 + 2)
