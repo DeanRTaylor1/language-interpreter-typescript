@@ -11,10 +11,19 @@ const start = () => {
 
 
   defineAst(outputDir, "Expr", [
+    "Assign : name- Token, value- Expr",
     "Binary : left- Expr, operator- Token, right- Expr",
     "Grouping : expression- Expr",
-    "Literal : value- any",
-    "Unary : operator- Token, right- Expr"
+    "Literal : value- LoxObject",
+    "Unary : operator- Token, right- Expr",
+    "Variable: name- Token"
+  ])
+
+  defineAst(outputDir, "Stmt", [
+    "Block : statements- Stmt[]",
+    "Expression : expression- Expr",
+    "Print : expression- Expr",
+    "Var : name- Token, initialiser- Expr | null"
   ])
 }
 
@@ -22,10 +31,13 @@ const defineAst = (outDir: string, baseName: string, types: Array<string>): void
   const path: string = `${__dirname}/../src/${baseName}.ts`
 
   const writer = fs.createWriteStream(path, {
-    flags: 'a'
+    flags: 'w'
   })
 
-  writer.write(`import { Token } from '../../src/token-type'\r\n \r\n`)
+  writer.write(`import { Token } from './token-type';\r\n \r\n`)
+  writer.write(`import { Expr } from './Expr';\r\n \r\n`)
+  writer.write(`import { LoxObject } from './interpreter';\r\n \r\n`)
+  
 
   writer.write(`export interface ${baseName} { \r\n `)
 
@@ -59,7 +71,6 @@ const defineType = (writer: fs.WriteStream, baseName: string, className: string,
 
   for (const field of fields) {
     let name: string = field.split(" ")[0];
-    console.log(name.slice(0, -1))
     writer.write("\r\n      this." + name.slice(0, -1) + " = " + name.slice(0, -1) + ";")
   }
 

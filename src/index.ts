@@ -6,6 +6,7 @@ import { Expr } from './Expr';
 import { Interpreter } from './interpreter';
 import { Parser } from './parser';
 import { Scanner } from './scanner';
+import { Stmt } from './Stmt';
 import { Token, TokenType } from './token-type';
 
 class Lox {
@@ -36,38 +37,38 @@ class Lox {
     const repl = createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: ("\u001b[31m" + "[lox--repl] >>" + "    ")
+      prompt: ("\u001b[31m" + "[lox--repl] >>" + "    " + "\u001b[0m")
     })
-
-    repl.on("line", (input) => {
-      if (input === 'exit') {
-        repl.close();
-      }
-      Lox.run(input)
-      this.hadError = false
+    try {
+      repl.on("line", (input) => {
+        if (input === 'exit') {
+          repl.close();
+        }
+        Lox.run(input)
+        this.hadError = false
+        repl.prompt();
+      })
+      repl.on("close", () => {
+        process.exit(0)
+      })
       repl.prompt();
-    })
+    } catch (err) {
+      console.log("error here")
+      repl.close();
+    }
 
-    repl.on("close", () => {
-      process.exit(0)
-    })
-    repl.prompt();
   }
 
   private static run(src: string): void {
     const scanner = new Scanner(src);
     const tokens = scanner.scanTokens();
     const parser = new Parser(tokens)
-    const expression: Expr = parser.parse();
-    //console.log(expression)
+    const statements: Stmt[] = parser.parse()
+    //check for errors
     if (this.hadError) process.exit(65);
     if (this.hadRuntimeError) process.exit(70)
-    this.interpreter.interpret(expression)
-    //console.log(expression)
-    /* for (let token of tokens) {*/
-    /*console.log(token)*/
-    /*}*/
-    //console.log(new AstPrinter().print(expression))
+    //interpret statements
+    this.interpreter.interpret(statements)
   }
   static tokenError(token: Token, message: string) {
     if (token.type === TokenType.EOF) {

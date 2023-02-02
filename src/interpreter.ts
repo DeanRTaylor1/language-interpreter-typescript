@@ -1,7 +1,9 @@
 import { Lox } from ".";
 import { RuntimeError } from "./errors";
-import { Binary, Expr, Grouping, Literal, Unary, Visitor } from "./Expr";
+import { Assign, Binary, Expr, Grouping, Literal, Unary, Variable, Visitor as ExprVisitor } from "./Expr";
 import { Token, TokenType } from "./token-type";
+import { Block, Expression, Print, Stmt, Var, Visitor as StmntVisitor } from './Stmt'
+import { Environment } from "./env";
 
 export type LoxObject =
   | string
@@ -9,12 +11,16 @@ export type LoxObject =
   | boolean
   | null
 
-class Interpreter implements Visitor<LoxObject> {
 
-  interpret(expression: Expr): void {
+class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
+
+  private environment: Environment = new Environment();
+
+  interpret(statements: Stmt[]): void {
     try {
-      const value: LoxObject = this.evaluate(expression)
-      console.log(this.stringify(value))
+      for (const statement of statements) {
+        this.execute(statement)
+      }
     } catch (err: any) {
       console.log('error')
       Lox.runtimeError(err)
@@ -42,6 +48,28 @@ class Interpreter implements Visitor<LoxObject> {
 
   private evaluate(expr: Expr): LoxObject {
     return expr.accept(this)
+  }
+
+  private execute(stmt: Stmt): void {
+    stmt.accept(this)
+  }
+
+  public visitBlockStmt(stmt: Block): void {
+    this.executeBlock(stmt.statements, new Environment(this.environment));
+
+  }
+
+  executeBlock(statements: Stmt[], environment: Environment) {
+    //when we find a block of code, we update the current scope and store the previous scope (which could have it's own stored previous scope we then operate the block of code using the new local scope)
+    const previous: Environment = this.environment;
+    try {
+      this.environment = environment;
+      for (const statement of statements) {
+        this.execute(statement)
+      }
+    } finally {
+      this.environment = previous;
+    }
   }
 
   private checkNumberOperand(operator: Token, operand: LoxObject): void {
@@ -131,6 +159,35 @@ class Interpreter implements Visitor<LoxObject> {
     return null
   }
 
+  public visitExpressionStmt(stmt: Expression): void {
+    this.evaluate(stmt.expression)
+    return
+  }
+
+  public visitPrintStmt(stmt: Print): void {
+    const value: LoxObject = this.evaluate(stmt.expression)
+    console.log(this.stringify(value))
+    return
+  }
+
+  public visitVarStmt(stmt: Var) {
+    let value: LoxObject | null = null;
+    if (stmt.initialiser !== null) {
+      value = this.evaluate(stmt.initialiser)
+    }
+
+    this.environment.define(stmt.name.lexeme, value)
+  }
+
+  public visitAssignExpr(expr: Assign): LoxObject {
+    const value: LoxObject = this.evaluate(expr.value)
+    this.environment.assign(expr.name, value)
+    return value;
+  }
+
+  public visitVariableExpr(expr: Variable): LoxObject {
+    return this.environment.get(expr.name)
+  }
 }
 
 export { Interpreter }
