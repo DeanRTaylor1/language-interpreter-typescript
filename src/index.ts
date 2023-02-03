@@ -53,8 +53,8 @@ class Lox {
       })
       repl.prompt();
     } catch (err) {
-      console.log("error here")
-      repl.close();
+      console.log("something went wrong")
+      repl.prompt();
     }
 
   }
@@ -63,13 +63,28 @@ class Lox {
     const scanner = new Scanner(src);
     const tokens = scanner.scanTokens();
     const parser = new Parser(tokens)
-    const statements: Stmt[] = parser.parse()
+    let statements: Stmt[] = [];
+    let expr: Expr | null = null;
+    try {
+
+      [statements, expr] = parser.parse()
+
+    } catch (err) {
+
+      console.error(err)
+      process.exit(65); 
+    }
     //check for errors
     if (this.hadError) process.exit(65);
     if (this.hadRuntimeError) process.exit(70)
     //interpret statements
-    this.interpreter.interpret(statements)
+    //parse statements to environment
+    if (statements.length > 0) this.interpreter.interpret(statements);
+    //if the user enters one expression, it will be interpreted and printed out to the console;
+    if (expr !== null) this.interpreter.interpret(expr)
   }
+
+
   static tokenError(token: Token, message: string) {
     if (token.type === TokenType.EOF) {
       this.report(token.line, " at end", message)

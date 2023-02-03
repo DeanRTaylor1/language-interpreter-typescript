@@ -2,6 +2,7 @@ import { Lox } from ".";
 import { Binary, Expr, Literal, Unary, Grouping, Variable, Assign } from "./Expr";
 import { Token, TokenType } from "./token-type";
 import { Block, Expression, Print, Stmt, Var } from './Stmt'
+import { RuntimeError } from "./errors";
 
 class ParseError extends Error {
   readonly name = "ParseError"
@@ -33,14 +34,21 @@ class Parser {
     return new ParseError(message, token?.line, token?.lexeme)
   }
 
-  parse(): Stmt[] {
+  parse(): [Stmt[], Expr | null] {
     const statements: Stmt[] = [];
-    //console.log(this.tokens)
-    while (!this.isAtEnd()) {
-      //console.log('while')
-      statements.push(this.declaration())
+    try {
+      while (!this.isAtEnd()) {
+        statements.push(this.declaration())
+      }
+      if (statements.length === 1 && statements[0] instanceof Expression) {
+        this.current = 0;
+        return [statements, this.expression()]
+      } else {
+        return [statements, null]
+      }
+    } catch (err) {
+      throw new RuntimeError(this.tokens[this.current], "Error in parsing tokens")
     }
-    return statements
   }
 
   private declaration(): Stmt {
@@ -59,7 +67,7 @@ class Parser {
 
   private statement(): Stmt {
     if (this.match(TokenType.PRINT)) return this.printStatement();
-    if(this.match(TokenType.LEFT_BRACE)) return new Block(this.block())
+    if (this.match(TokenType.LEFT_BRACE)) return new Block(this.block())
     return this.expressionStatement();
   }
 
@@ -92,7 +100,7 @@ class Parser {
   private block(): Stmt[] {
     const statements: Stmt[] = []
     //adding is EOF check to prevent infinity loops
-   while(!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()){
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
       statements.push(this.declaration())
     }
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")

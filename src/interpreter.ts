@@ -16,14 +16,19 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
   private environment: Environment = new Environment();
 
-  interpret(statements: Stmt[]): void {
-    try {
-      for (const statement of statements) {
-        this.execute(statement)
+  interpret(statements: Stmt[] | Expr): void {
+    if (statements instanceof Array) {
+      try {
+        for (const statement of statements) {
+          statement && this.execute(statement)
+        }
+      } catch (err: any) {
+        console.log('error')
+        Lox.runtimeError(err)
       }
-    } catch (err: any) {
-      console.log('error')
-      Lox.runtimeError(err)
+    } else {
+      const value = this.evaluate(statements)
+      console.log(this.stringify(value))
     }
   }
 
