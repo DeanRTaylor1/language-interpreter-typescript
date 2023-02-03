@@ -1,8 +1,8 @@
 import { Lox } from ".";
 import { RuntimeError } from "./errors";
-import { Assign, Binary, Expr, Grouping, Literal, Unary, Variable, Visitor as ExprVisitor } from "./Expr";
+import { Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable, Visitor as ExprVisitor } from "./Expr";
 import { Token, TokenType } from "./token-type";
-import { Block, Expression, Print, Stmt, Var, Visitor as StmntVisitor } from './Stmt'
+import { Block, Expression, Print, Stmt, Var, If, Visitor as StmntVisitor, While } from './Stmt'
 import { Environment } from "./env";
 
 export type LoxObject =
@@ -19,6 +19,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   interpret(statements: Stmt[] | Expr): void {
     if (statements instanceof Array) {
       try {
+        //console.log(statements)
         for (const statement of statements) {
           statement && this.execute(statement)
         }
@@ -61,7 +62,6 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
   public visitBlockStmt(stmt: Block): void {
     this.executeBlock(stmt.statements, new Environment(this.environment));
-
   }
 
   executeBlock(statements: Stmt[], environment: Environment) {
@@ -70,7 +70,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     try {
       this.environment = environment;
       for (const statement of statements) {
-        this.execute(statement)
+        statement && this.execute(statement)
       }
     } finally {
       this.environment = previous;
@@ -90,6 +90,18 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   public visitLiteralExpr(expr: Literal) {
     return expr.value
   }
+
+  public visitLogicalExpr(expr: Logical): LoxObject {
+    const left: LoxObject = this.evaluate(expr.left);
+
+    if (expr.operator.type === TokenType.OR) {
+      if (!!left) return left;
+    } else {
+      if (!left) return left;
+    }
+    return this.evaluate(expr.right);
+  }
+
 
   public visitGroupingExpr(expr: Grouping) {
     return this.evaluate(expr.expression)
@@ -166,13 +178,21 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
   public visitExpressionStmt(stmt: Expression): void {
     this.evaluate(stmt.expression)
-    return
+  }
+
+  public visitIfStmt(stmt: If): void {
+    //check if the condition is truthy and exeucute the statement
+    //if the statement is falsey check if there is an else and execute or return
+    if (!!stmt.condition) {
+      this.execute(stmt.thenBranch)
+    } else if (stmt.elseBranch) {
+      this.execute(stmt.elseBranch)
+    }
   }
 
   public visitPrintStmt(stmt: Print): void {
     const value: LoxObject = this.evaluate(stmt.expression)
     console.log(this.stringify(value))
-    return
   }
 
   public visitVarStmt(stmt: Var) {
@@ -184,8 +204,16 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     this.environment.define(stmt.name.lexeme, value)
   }
 
+  public visitWhileStmt(stmt: While): void {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body);
+    }
+  }
+
+
   public visitAssignExpr(expr: Assign): LoxObject {
     const value: LoxObject = this.evaluate(expr.value)
+    //console.log(this.environment.values, this.environment.values.get('temp'), "temp")
     this.environment.assign(expr.name, value)
     return value;
   }
@@ -193,6 +221,15 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   public visitVariableExpr(expr: Variable): LoxObject {
     return this.environment.get(expr.name)
   }
+
+
+  private isTruthy(object: LoxObject): boolean {
+    if (object === null) return false
+    if (typeof object === "boolean") return object
+    return true
+  }
+
+
 }
 
 export { Interpreter }

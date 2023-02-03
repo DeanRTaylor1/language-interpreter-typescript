@@ -1,3 +1,4 @@
+
 import { RuntimeError } from "./errors";
 import { LoxObject } from "./interpreter";
 import { Token } from "./token-type";
@@ -16,7 +17,8 @@ export class Environment {
   }
 
   get(name: Token): LoxObject {
-    if (this.values[name.lexeme]) {
+    //console.log(name.lexeme in this.values)
+    if (name.lexeme in this.values) {
       return this.values[name.lexeme]
     }
     if (this.enclosing !== null) return this.enclosing.get(name)

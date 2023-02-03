@@ -15,6 +15,7 @@ const start = () => {
     "Binary : left- Expr, operator- Token, right- Expr",
     "Grouping : expression- Expr",
     "Literal : value- LoxObject",
+    "Logical : left- Expr, operator- Token, right- Expr",
     "Unary : operator- Token, right- Expr",
     "Variable: name- Token"
   ])
@@ -22,8 +23,10 @@ const start = () => {
   defineAst(outputDir, "Stmt", [
     "Block : statements- Stmt[]",
     "Expression : expression- Expr",
+    "If : condition- Expr, thenBranch- Stmt, elseBranch?- Stmt",
     "Print : expression- Expr",
-    "Var : name- Token, initialiser- Expr | null"
+    "Var : name- Token, initialiser- Expr | null",
+    "While : condition- Expr, body- Stmt"
   ])
 }
 
@@ -34,9 +37,9 @@ const defineAst = (outDir: string, baseName: string, types: Array<string>): void
     flags: 'w'
   })
 
-  writer.write(`import { Token } from './token-type';\r\n \r\n`)
-  writer.write(`import { Expr } from './Expr';\r\n \r\n`)
-  writer.write(`import { LoxObject } from './interpreter';\r\n \r\n`)
+  writer.write(`import { Token } from './token-type';\r\n `)
+  if (baseName !== "Expr") writer.write(`import { Expr } from './Expr';\r\n `);
+  writer.write(`import { LoxObject } from './interpreter';\r\n`)
   
 
   writer.write(`export interface ${baseName} { \r\n `)
@@ -52,7 +55,7 @@ const defineAst = (outDir: string, baseName: string, types: Array<string>): void
     defineType(writer, baseName, className, fields)
   }
 
-  //writer.write("\r\n}")
+  writer.write("\r\n")
 }
 
 const defineType = (writer: fs.WriteStream, baseName: string, className: string, fieldList: string) => {
@@ -60,25 +63,27 @@ const defineType = (writer: fs.WriteStream, baseName: string, className: string,
 
   const fields: string[] = fieldList.split(", ");
 
-  writer.write("\r\n   export class " + className + " implements " + baseName + " {")
+  writer.write("\r\nexport class " + className + " implements " + baseName + " {")
 
 
   for (const field of fields) {
-    writer.write("\r\n    readonly " + field.replace(/-\s+/g, ':') + ";")
+    writer.write("\r\n  readonly " + field.replace(/-\s+/g, ': ') + ";")
   }
 
-  writer.write("\r\n     " + "constructor(" + fieldList.replace(/-\s+/g, ':') + ") {")
+    writer.write("\r\n\r\n" + "  constructor(" + fieldList.replace(/-\s+/g, ': ') + ") {")
 
   for (const field of fields) {
     let name: string = field.split(" ")[0];
-    writer.write("\r\n      this." + name.slice(0, -1) + " = " + name.slice(0, -1) + ";")
+    writer.write("\r\n    this." + name.slice(0, -1).replace(/\?/g, "") + " = " + name.slice(0, -1).replace(/\?/g, "") + ";")
   }
 
+
   writer.write(" \r\n }")
-  writer.write(`\r\n accept<R>(visitor: Visitor<R>){
+  writer.write("\r\n")
+  writer.write(`\r\n  accept<R>(visitor: Visitor<R>){
     return visitor.visit${className}${baseName}(this)
   }`)
-  writer.write("\r\n}")
+  writer.write("\r\n}\r\n")
 
 
 
