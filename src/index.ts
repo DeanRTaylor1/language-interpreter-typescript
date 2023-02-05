@@ -72,8 +72,9 @@ class Lox {
     } catch (err) {
 
       console.error(err)
-      process.exit(65); 
+      process.exit(65);
     }
+
     //check for errors
     if (this.hadError) process.exit(65);
     if (this.hadRuntimeError) process.exit(70)

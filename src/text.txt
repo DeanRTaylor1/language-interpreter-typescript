@@ -1,14 +1,14 @@
-var a = 1;
-print a;
-var a = 11231231 / 1234;
-print a;
 
 
 var a = 0;
+
 var temp;
 
-for (var b = 1; a < 100000; b = temp + b) {
-    print a;
+for (var b = 1; a < 10000; b = temp + b){
+    if (a / 3 >  1000) {
+      print a; 
+      break;
+    }
     temp = a;
     a = b;
   }

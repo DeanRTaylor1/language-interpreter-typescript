@@ -30,7 +30,8 @@ class Scanner {
     this: TokenType.THIS,
     true: TokenType.TRUE,
     var: TokenType.VAR,
-    while: TokenType.WHILE
+    while: TokenType.WHILE,
+    //break: TokenType.BREAK
   }
 
   scanTokens(): Array<Token> {
@@ -61,7 +62,6 @@ class Scanner {
 
   private scanToken(): void {
     let c = this.advance();
-
     switch (c) {
       case ")": {
         this.addToken(TokenType.RIGHT_PAREN)

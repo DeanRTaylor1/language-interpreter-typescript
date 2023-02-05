@@ -29,7 +29,6 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       }
     } else {
       const value = this.evaluate(statements)
-      console.log(this.stringify(value))
     }
   }
 
@@ -111,50 +110,51 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     const left: LoxObject = this.evaluate(expr.left)
     const right: LoxObject = this.evaluate(expr.right)
 
+   
     switch (expr.operator.type) {
-      case TokenType.BANG_EQUAL: {
-        return +left! !== +right!;
-      }
-      case TokenType.EQUAL_EQUAL: {
+      case TokenType.BANG_EQUAL:
+        //console.log(expr.operator.type, left, right, left !== right)
+        return left! !== right!;
+      case TokenType.EQUAL_EQUAL:
         return this.isEqual(left, right)
-      }
-      case TokenType.GREATER: {
+      case TokenType.GREATER:
+        //console.log(expr.operator.type, left, right, left === right)
         this.checkNumberOperands(expr.operator, left, right)
         return +left! > +right!;
-      }
-      case TokenType.GREATER_EQUAL: {
+
+      case TokenType.GREATER_EQUAL:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! >= +right!;
-      }
-      case TokenType.LESS: {
+
+      case TokenType.LESS:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! < +right!;
-      }
-      case TokenType.LESS_EQUAL: {
+
+      case TokenType.LESS_EQUAL:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! <= +right!;
-      }
-      case TokenType.MINUS: {
+
+      case TokenType.MINUS:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! - +right!
-      }
-      case TokenType.PLUS: {
-        if (typeof left === 'number' && typeof right === "number") {
+
+      case TokenType.PLUS:
+        if (typeof left === 'number' && typeof right === "number")
           return +left! + +right!
-        }
-        if (typeof left === 'string' && typeof right === 'string') {
+
+        if (typeof left === 'string' && typeof right === 'string')
           return left!.toString() + right!.toString();
-        }
+
         throw new RuntimeError(expr.operator, "Operands must be either two numbers or two strings.")
-      }
-      case TokenType.SLASH: {
+
+      case TokenType.SLASH:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! / + right!
-      }
-      case TokenType.STAR: {
+
+      case TokenType.STAR:
         this.checkNumberOperands(expr.operator, left, right)
         return +left! * +right!
-      }
+
     }
     return null;
   }
@@ -183,7 +183,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   public visitIfStmt(stmt: If): void {
     //check if the condition is truthy and exeucute the statement
     //if the statement is falsey check if there is an else and execute or return
-    if (!!stmt.condition) {
+    if (!!this.evaluate(stmt.condition)) {
       this.execute(stmt.thenBranch)
     } else if (stmt.elseBranch) {
       this.execute(stmt.elseBranch)
@@ -205,7 +205,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   }
 
   public visitWhileStmt(stmt: While): void {
-    while (this.isTruthy(this.evaluate(stmt.condition))) {
+    while (!!(this.evaluate(stmt.condition))) {
       this.execute(stmt.body);
     }
   }
@@ -223,11 +223,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   }
 
 
-  private isTruthy(object: LoxObject): boolean {
-    if (object === null) return false
-    if (typeof object === "boolean") return object
-    return true
-  }
+
 
 
 }
