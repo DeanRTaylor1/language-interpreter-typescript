@@ -9,6 +9,7 @@ import {
   Assign,
   Logical,
   Call,
+  Func as ExprFunc,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -20,7 +21,7 @@ import {
   Var,
   While,
   Break,
-  Func,
+  Func as StmtFunc,
   Return,
 } from "./Stmt"
 import { RuntimeError } from "./errors"
@@ -78,7 +79,10 @@ class Parser {
 
   private declaration(): Stmt {
     try {
-      if (this.match(TokenType.FUNC)) return this.func("function")
+      if (this.check(TokenType.FUNC) && this.checkNext(TokenType.IDENTIFIER)) {
+        this.consume(TokenType.FUNC, "null")
+        return this.func("function")
+      }
       if (this.match(TokenType.VAR)) return this.varDeclaration()
       return this.statement()
     } catch (err: any) {
@@ -93,7 +97,7 @@ class Parser {
     if (this.match(TokenType.FOR)) return this.forStatement()
     if (this.match(TokenType.IF)) return this.ifStatement()
     if (this.match(TokenType.PRINT)) return this.printStatement()
-    if(this.match(TokenType.RETURN)) return this.returnStatement();
+    if (this.match(TokenType.RETURN)) return this.returnStatement()
     if (this.match(TokenType.WHILE)) return this.whileStatement()
     if (this.match(TokenType.BREAK)) return this.breakStatement()
     if (this.match(TokenType.LEFT_BRACE)) return new Block(this.block())
@@ -180,11 +184,11 @@ class Parser {
   }
 
   private returnStatement(): Stmt {
-    const keyword: Token = this.previous();
+    const keyword: Token = this.previous()
 
-    let value: Expr | null = null;
-    if(!this.check(TokenType.SEMICOLON)) {
-      value = this.expression();
+    let value: Expr | null = null
+    if (!this.check(TokenType.SEMICOLON)) {
+      value = this.expression()
     }
 
     this.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
@@ -258,22 +262,22 @@ class Parser {
     return expr
   }
 
-  private func(kind: string): Func {
-    const name: Token = this.consume(
-      TokenType.IDENTIFIER,
-      "Expect " + kind + " name"
-    )
+  private func(kind: string): StmtFunc {
+    const name = this.consume(TokenType.IDENTIFIER, "Expect " + kind + " name")
+    return new StmtFunc(name, this.funcBody(kind))
+  }
 
+  private funcBody(kind: string): ExprFunc {
     this.consume(TokenType.LEFT_PAREN, "Expect  '(' after " + kind + " name")
 
     const parameters: Token[] = []
 
     if (!this.check(TokenType.RIGHT_PAREN)) {
       do {
-        if (parameters.length >= 255) {
+        if (parameters.length >= 8) {
           throw new RuntimeError(
             this.peek(),
-            "Can't have more than 255 parameters."
+            "Can't have more than 8 parameters."
           )
         }
         parameters.push(
@@ -287,7 +291,7 @@ class Parser {
     this.consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body")
     const body: Stmt[] = this.block()
 
-    return new Func(name, parameters, body)
+    return new ExprFunc(parameters, body)
   }
 
   private or(): Expr {
@@ -451,6 +455,7 @@ class Parser {
     if (this.match(TokenType.FALSE)) return new Literal(false)
     if (this.match(TokenType.TRUE)) return new Literal(true)
     if (this.match(TokenType.NIL)) return new Literal(null)
+    if (this.match(TokenType.FUNC)) return this.funcBody("function")
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal)
     }
@@ -469,6 +474,12 @@ class Parser {
     if (this.check(type)) return this.advance()
 
     throw Parser.error(this.peek(), message)
+  }
+
+  private checkNext(tokenType: TokenType): Boolean {
+    if (this.isAtEnd()) return false
+    if (this.tokens[this.current + 1].type === TokenType.EOF) return false
+    return this.tokens[this.current + 1].type === tokenType
   }
 
   private synchronise(): void {

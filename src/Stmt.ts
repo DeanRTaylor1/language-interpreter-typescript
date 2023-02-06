@@ -1,7 +1,6 @@
 import { Token } from './token-type';
- import { Expr } from './Expr';
- import { LoxObject } from './types';
-export interface Stmt { 
+ import { Expr, Func as ExprFunc } from './Expr';
+ export interface Stmt { 
  accept<R>(visitor: Visitor<R>): R
 } 
 
@@ -52,13 +51,11 @@ export class Expression implements Stmt {
 
 export class Func implements Stmt {
   readonly name: Token;
-  readonly params: Token[];
-  readonly body: Stmt[];
+  readonly func: ExprFunc;
 
-  constructor(name: Token, params: Token[], body: Stmt[]) {
+  constructor(name: Token, func: ExprFunc) {
     this.name = name;
-    this.params = params;
-    this.body = body; 
+    this.func = func; 
  }
 
   accept<R>(visitor: Visitor<R>){

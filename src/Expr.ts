@@ -1,4 +1,5 @@
 import { Token } from './token-type';
+ import { Stmt } from './Stmt';
  import { LoxObject } from './types';
 export interface Expr { 
  accept<R>(visitor: Visitor<R>): R
@@ -7,6 +8,7 @@ export interface Expr {
 export interface Visitor<R> {
    visitAssignExpr(expr: Assign): R
    visitBinaryExpr(expr: Binary): R
+   visitFuncExpr(expr: Func): R
    visitCallExpr(expr: Call): R
    visitGroupingExpr(expr: Grouping): R
    visitLiteralExpr(expr: Literal): R
@@ -41,6 +43,20 @@ export class Binary implements Expr {
 
   accept<R>(visitor: Visitor<R>){
     return visitor.visitBinaryExpr(this)
+  }
+}
+
+export class Func implements Expr {
+  readonly params: Token[];
+  readonly body: Stmt[];
+
+  constructor(params: Token[], body: Stmt[]) {
+    this.params = params;
+    this.body = body; 
+ }
+
+  accept<R>(visitor: Visitor<R>){
+    return visitor.visitFuncExpr(this)
   }
 }
 

@@ -10,6 +10,7 @@ import {
   Logical,
   Unary,
   Variable,
+  Func as ExprFunc,
   Visitor as ExprVisitor,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
@@ -23,7 +24,7 @@ import {
   Visitor as StmntVisitor,
   While,
   Break,
-  Func,
+  Func as StmtFunc,
   Return,
 } from "./Stmt"
 import { Environment } from "./env"
@@ -190,6 +191,8 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       args.push(this.evaluate(arg))
     }
 
+    console.log(callee)
+
     if (!(callee instanceof LoxCallable)) {
       throw new RuntimeError(expr.paren, `Can only call functions`)
     }
@@ -224,9 +227,13 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     this.evaluate(stmt.expression)
   }
 
-  public visitFuncStmt(stmt: Func): void {
-    const func: LoxFunction = new LoxFunction(stmt)
-    this.environment.define(stmt.name.lexeme, func)
+  public visitFuncStmt(stmt: StmtFunc): void {
+    const fnName = stmt.name.lexeme;
+    this.environment.define(fnName, new LoxFunction(fnName, stmt.func, this.environment))
+  }
+
+  public visitFuncExpr(expr: ExprFunc): LoxObject {
+    return new LoxFunction(null, expr, this.environment)
   }
 
   public visitIfStmt(stmt: If): void {

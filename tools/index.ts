@@ -12,6 +12,7 @@ const start = () => {
   defineAst(outputDir, "Expr", [
     "Assign : name- Token, value- Expr",
     "Binary : left- Expr, operator- Token, right- Expr",
+    "Func : params- Token[], body- Stmt[]",
     "Call : callee- Expr, paren- Token, args- Expr[]",
     "Grouping : expression- Expr",
     "Literal : value- LoxObject",
@@ -24,7 +25,7 @@ const start = () => {
     "Block : statements- Stmt[]",
     "Break : ",
     "Expression : expression- Expr",
-    "Func : name- Token, params- Token[], body- Stmt[]",
+    "Func : name- Token, func- ExprFunc",
     "If : condition- Expr, thenBranch- Stmt, elseBranch?- Stmt",
     "Print : expression- Expr",
     "Return : keyword- Token, value- Expr | null",
@@ -45,8 +46,11 @@ const defineAst = (
   })
 
   writer.write(`import { Token } from './token-type';\r\n `)
-  if (baseName !== "Expr") writer.write(`import { Expr } from './Expr';\r\n `)
-  writer.write(`import { LoxObject } from './types';\r\n`)
+  if (baseName !== "Expr")
+    writer.write(`import { Expr, Func as ExprFunc } from './Expr';\r\n `)
+  if (baseName === "Expr") writer.write(`import { Stmt } from './Stmt';\r\n `)
+  if (baseName === "Expr")
+    writer.write(`import { LoxObject } from './types';\r\n`)
 
   writer.write(`export interface ${baseName} { \r\n `)
 

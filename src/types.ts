@@ -1,6 +1,6 @@
 import { Environment } from "./env"
 import { Interpreter } from "./interpreter"
-import { Func } from "./Stmt"
+import { Func as ExprFunc } from "./Expr"
 
 type LoxObject = LoxCallable | string | number | boolean | null
 
@@ -29,15 +29,21 @@ export class LoxFunction extends LoxCallable {
     }
   }
 
-  private readonly declaration: Func
+  private readonly name?: string ;
+  private readonly declaration: ExprFunc
+  private readonly closure: Environment
 
-  constructor(declaration: Func) {
+  constructor(name: string | null, declaration: ExprFunc, closure: Environment) {
     super()
     this.declaration = declaration
+    this.closure = closure
+    if(!!name) {
+      this.name = name;
+    }
   }
 
   call(interpreter: Interpreter, args: LoxObject[]) {
-    const environment: Environment = new Environment(interpreter.globals)
+    const environment: Environment = new Environment(this.closure)
     for (let i = 0; i < this.declaration.params.length; i++) {
       environment.define(this.declaration.params[i].lexeme, args[i])
     }
@@ -57,7 +63,10 @@ export class LoxFunction extends LoxCallable {
   }
 
   public toString(): string {
-    return `<fn ${this.declaration.name.lexeme}>`
+    if(this.name === undefined) {
+      return '<fn>'
+    }
+    return `<fn ${this.name}>`
   }
 }
 
