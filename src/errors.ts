@@ -2,6 +2,8 @@ import { Lox } from ".";
 import { Token } from "./token-type";
 
 
+
+
 class RuntimeError extends Error {
   readonly name: string;
   readonly token: Token;
@@ -13,4 +15,10 @@ class RuntimeError extends Error {
   }
 }
 
-export { RuntimeError }
+
+
+class BreakException extends Error {
+
+}
+
+export { RuntimeError, BreakException }

@@ -31,7 +31,7 @@ class Scanner {
     true: TokenType.TRUE,
     var: TokenType.VAR,
     while: TokenType.WHILE,
-    //break: TokenType.BREAK
+    break: TokenType.BREAK
   }
 
   scanTokens(): Array<Token> {

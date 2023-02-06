@@ -1,14 +1,13 @@
-import { Token } from './token-type';
-import { Expr } from './Expr';
-
-
-
+import { Token } from "./token-type"
+import { Expr } from "./Expr"
+import { LoxObject } from "./interpreter"
 export interface Stmt {
   accept<R>(visitor: Visitor<R>): R
 }
 
 export interface Visitor<R> {
   visitBlockStmt(stmt: Block): R
+  visitBreakStmt(stmt: Break): R
   visitExpressionStmt(stmt: Expression): R
   visitIfStmt(stmt: If): R
   visitPrintStmt(stmt: Print): R
@@ -16,10 +15,10 @@ export interface Visitor<R> {
   visitWhileStmt(stmt: While): R
 }
 export class Block implements Stmt {
-  readonly statements: Stmt[];
+  readonly statements: Stmt[]
 
   constructor(statements: Stmt[]) {
-    this.statements = statements;
+    this.statements = statements
   }
 
   accept<R>(visitor: Visitor<R>) {
@@ -27,11 +26,19 @@ export class Block implements Stmt {
   }
 }
 
+export class Break implements Stmt {
+  constructor() {}
+
+  accept<R>(visitor: Visitor<R>) {
+    return visitor.visitBreakStmt(this)
+  }
+}
+
 export class Expression implements Stmt {
-  readonly expression: Expr;
+  readonly expression: Expr
 
   constructor(expression: Expr) {
-    this.expression = expression;
+    this.expression = expression
   }
 
   accept<R>(visitor: Visitor<R>) {
@@ -40,14 +47,14 @@ export class Expression implements Stmt {
 }
 
 export class If implements Stmt {
-  readonly condition: Expr;
-  readonly thenBranch: Stmt;
-  readonly elseBranch?: Stmt | null;
+  readonly condition: Expr
+  readonly thenBranch: Stmt
+  readonly elseBranch?: Stmt
 
   constructor(condition: Expr, thenBranch: Stmt, elseBranch?: Stmt) {
-    this.condition = condition;
-    this.thenBranch = thenBranch;
-    !!elseBranch ? this.elseBranch = elseBranch : this.elseBranch = null;
+    this.condition = condition
+    this.thenBranch = thenBranch
+    this.elseBranch = elseBranch
   }
 
   accept<R>(visitor: Visitor<R>) {
@@ -56,10 +63,10 @@ export class If implements Stmt {
 }
 
 export class Print implements Stmt {
-  readonly expression: Expr;
+  readonly expression: Expr
 
   constructor(expression: Expr) {
-    this.expression = expression;
+    this.expression = expression
   }
 
   accept<R>(visitor: Visitor<R>) {
@@ -68,12 +75,12 @@ export class Print implements Stmt {
 }
 
 export class Var implements Stmt {
-  readonly name: Token;
-  readonly initialiser: Expr | null;
+  readonly name: Token
+  readonly initialiser: Expr | null
 
   constructor(name: Token, initialiser: Expr | null) {
-    this.name = name;
-    this.initialiser = initialiser;
+    this.name = name
+    this.initialiser = initialiser
   }
 
   accept<R>(visitor: Visitor<R>) {
@@ -82,16 +89,15 @@ export class Var implements Stmt {
 }
 
 export class While implements Stmt {
-  readonly condition: Expr;
-  readonly body: Stmt;
+  readonly condition: Expr
+  readonly body: Stmt
 
   constructor(condition: Expr, body: Stmt) {
-    this.condition = condition;
-    this.body = body;
+    this.condition = condition
+    this.body = body
   }
 
   accept<R>(visitor: Visitor<R>) {
     return visitor.visitWhileStmt(this)
   }
 }
-

@@ -45,7 +45,7 @@ enum TokenType {
   TRUE = "TRUE",
   VAR = "VAR",
   WHILE = "WHILE",
-  //BREAK = "BREAK",
+  BREAK = "BREAK",
 
   EOF = "EOF"
 }
