@@ -33,7 +33,7 @@ enum TokenType {
   CLASS = "CLASS",
   ELSE = "ELSE", 
   FALSE = "FALSE",
-  FUN = "FUN",
+  FUNC = "FUNC",
   FOR = "FOR",
   IF = "IF",
   NIL = "NIL",

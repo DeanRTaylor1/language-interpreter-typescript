@@ -3,6 +3,7 @@ import { RuntimeError, BreakException } from "./errors"
 import {
   Assign,
   Binary,
+  Call,
   Expr,
   Grouping,
   Literal,
@@ -22,13 +23,19 @@ import {
   Visitor as StmntVisitor,
   While,
   Break,
+  Func,
+  Return,
 } from "./Stmt"
 import { Environment } from "./env"
-
-export type LoxObject = string | number | boolean | null
+import { LoxCallable, LoxClock, LoxFunction, LoxObject } from "./types"
 
 class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
-  private environment: Environment = new Environment()
+  readonly globals: Environment = new Environment()
+  private environment: Environment = this.globals
+
+  constructor() {
+    this.globals.define("clock", new LoxClock())
+  }
 
   interpret(statements: Stmt[] | Expr): void {
     if (statements instanceof Array) {
@@ -42,7 +49,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
         Lox.runtimeError(err)
       }
     } else {
-      const value = this.evaluate(statements)
+      this.evaluate(statements)
     }
   }
 
@@ -174,6 +181,29 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     return null
   }
 
+  public visitCallExpr(expr: Call): LoxObject {
+    const callee: LoxObject = this.evaluate(expr.callee)
+
+    const args: LoxObject[] = []
+
+    for (const arg of expr.args) {
+      args.push(this.evaluate(arg))
+    }
+
+    if (!(callee instanceof LoxCallable)) {
+      throw new RuntimeError(expr.paren, `Can only call functions`)
+    }
+
+    const func: LoxCallable = callee
+    if (args.length != func.arity()) {
+      throw new RuntimeError(
+        expr.paren,
+        `Expected ${func.arity()} arguments but got ${args.length}.`
+      )
+    }
+    return func.call(this, args)
+  }
+
   public visitUnaryExpr(expr: Unary): LoxObject {
     const right: LoxObject = this.evaluate(expr.right)
 
@@ -194,6 +224,11 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     this.evaluate(stmt.expression)
   }
 
+  public visitFuncStmt(stmt: Func): void {
+    const func: LoxFunction = new LoxFunction(stmt)
+    this.environment.define(stmt.name.lexeme, func)
+  }
+
   public visitIfStmt(stmt: If): void {
     //check if the condition is truthy and exeucute the statement
     //if the statement is falsey check if there is an else and execute or return
@@ -211,6 +246,13 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   public visitPrintStmt(stmt: Print): void {
     const value: LoxObject = this.evaluate(stmt.expression)
     console.log(this.stringify(value))
+  }
+
+  public visitReturnStmt(stmt: Return): void {
+    let value = null
+    if (stmt.value !== null) value = this.evaluate(stmt.value)
+
+    throw new LoxFunction.Return(value)
   }
 
   public visitVarStmt(stmt: Var) {

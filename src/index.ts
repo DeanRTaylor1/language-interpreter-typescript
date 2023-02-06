@@ -60,17 +60,15 @@ class Lox {
   private static run(src: string): void {
     const scanner = new Scanner(src)
     const tokens = scanner.scanTokens()
-    console.log(tokens)
     const parser = new Parser(tokens)
     let statements: Stmt[] = []
     let expr: Expr | null = null
     try {
-      ;[statements, expr] = parser.parse()
+      [statements, expr] = parser.parse()
     } catch (err) {
       console.error(err)
       process.exit(65)
     }
-    console.log(statements)
 
     //check for errors
     if (this.hadError) process.exit(65)

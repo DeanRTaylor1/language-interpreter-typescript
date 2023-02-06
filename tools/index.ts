@@ -12,6 +12,7 @@ const start = () => {
   defineAst(outputDir, "Expr", [
     "Assign : name- Token, value- Expr",
     "Binary : left- Expr, operator- Token, right- Expr",
+    "Call : callee- Expr, paren- Token, args- Expr[]",
     "Grouping : expression- Expr",
     "Literal : value- LoxObject",
     "Logical : left- Expr, operator- Token, right- Expr",
@@ -23,8 +24,10 @@ const start = () => {
     "Block : statements- Stmt[]",
     "Break : ",
     "Expression : expression- Expr",
+    "Func : name- Token, params- Token[], body- Stmt[]",
     "If : condition- Expr, thenBranch- Stmt, elseBranch?- Stmt",
     "Print : expression- Expr",
+    "Return : keyword- Token, value- Expr | null",
     "Var : name- Token, initialiser- Expr | null",
     "While : condition- Expr, body- Stmt",
   ])
@@ -43,7 +46,7 @@ const defineAst = (
 
   writer.write(`import { Token } from './token-type';\r\n `)
   if (baseName !== "Expr") writer.write(`import { Expr } from './Expr';\r\n `)
-  writer.write(`import { LoxObject } from './interpreter';\r\n`)
+  writer.write(`import { LoxObject } from './types';\r\n`)
 
   writer.write(`export interface ${baseName} { \r\n `)
 

@@ -20,7 +20,7 @@ class Scanner {
     else: TokenType.ELSE,
     false: TokenType.FALSE,
     for: TokenType.FOR,
-    fun: TokenType.FUN,
+    func: TokenType.FUNC,
     if: TokenType.IF,
     nil: TokenType.NIL,
     or: TokenType.OR,

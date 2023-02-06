@@ -1,6 +1,6 @@
 
 import { RuntimeError } from "./errors";
-import { LoxObject } from "./interpreter";
+import { LoxObject } from "./types";
 import { Token } from "./token-type";
 
 

@@ -8,9 +8,21 @@ import {
   Variable,
   Assign,
   Logical,
+  Call,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
-import { If, Block, Expression, Print, Stmt, Var, While, Break } from "./Stmt"
+import {
+  If,
+  Block,
+  Expression,
+  Print,
+  Stmt,
+  Var,
+  While,
+  Break,
+  Func,
+  Return,
+} from "./Stmt"
 import { RuntimeError } from "./errors"
 
 class ParseError extends Error {
@@ -66,6 +78,7 @@ class Parser {
 
   private declaration(): Stmt {
     try {
+      if (this.match(TokenType.FUNC)) return this.func("function")
       if (this.match(TokenType.VAR)) return this.varDeclaration()
       return this.statement()
     } catch (err: any) {
@@ -80,6 +93,7 @@ class Parser {
     if (this.match(TokenType.FOR)) return this.forStatement()
     if (this.match(TokenType.IF)) return this.ifStatement()
     if (this.match(TokenType.PRINT)) return this.printStatement()
+    if(this.match(TokenType.RETURN)) return this.returnStatement();
     if (this.match(TokenType.WHILE)) return this.whileStatement()
     if (this.match(TokenType.BREAK)) return this.breakStatement()
     if (this.match(TokenType.LEFT_BRACE)) return new Block(this.block())
@@ -165,6 +179,18 @@ class Parser {
     return new Print(value)
   }
 
+  private returnStatement(): Stmt {
+    const keyword: Token = this.previous();
+
+    let value: Expr | null = null;
+    if(!this.check(TokenType.SEMICOLON)) {
+      value = this.expression();
+    }
+
+    this.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+    return new Return(keyword, value)
+  }
+
   private varDeclaration(): Stmt {
     const name: Token | ParseError = this.consume(
       TokenType.IDENTIFIER,
@@ -230,6 +256,38 @@ class Parser {
     }
 
     return expr
+  }
+
+  private func(kind: string): Func {
+    const name: Token = this.consume(
+      TokenType.IDENTIFIER,
+      "Expect " + kind + " name"
+    )
+
+    this.consume(TokenType.LEFT_PAREN, "Expect  '(' after " + kind + " name")
+
+    const parameters: Token[] = []
+
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        if (parameters.length >= 255) {
+          throw new RuntimeError(
+            this.peek(),
+            "Can't have more than 255 parameters."
+          )
+        }
+        parameters.push(
+          this.consume(TokenType.IDENTIFIER, "Expect parameter name.")
+        )
+      } while (this.match(TokenType.COMMA))
+    }
+
+    this.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameter name.")
+
+    this.consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body")
+    const body: Stmt[] = this.block()
+
+    return new Func(name, parameters, body)
   }
 
   private or(): Expr {
@@ -349,7 +407,44 @@ class Parser {
       return new Unary(operator, right)
     }
 
-    return this.primary()
+    return this.call()
+  }
+
+  private finishCall(callee: Expr) {
+    const args: Expr[] = []
+
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        if (args.length >= 255) {
+          throw new RuntimeError(
+            this.peek(),
+            "Can't have more than 255 arguments."
+          )
+        }
+        args.push(this.expression())
+      } while (this.match(TokenType.COMMA))
+    }
+
+    const paren: Token | ParseError = this.consume(
+      TokenType.RIGHT_PAREN,
+      "Expect ')' after arguments."
+    )
+
+    return new Call(callee, paren as Token, args)
+  }
+
+  private call(): Expr {
+    let expr: Expr = this.primary()
+
+    while (true) {
+      if (this.match(TokenType.LEFT_PAREN)) {
+        expr = this.finishCall(expr)
+      } else {
+        break
+      }
+    }
+
+    return expr
   }
 
   private primary(): Expr {
@@ -370,7 +465,7 @@ class Parser {
     throw new Error("Something went wrong")
   }
 
-  private consume(type: TokenType, message: string): Token | ParseError {
+  private consume(type: TokenType, message: string): Token {
     if (this.check(type)) return this.advance()
 
     throw Parser.error(this.peek(), message)
@@ -384,7 +479,7 @@ class Parser {
 
       switch (this.peek().type) {
         case TokenType.CLASS:
-        case TokenType.FUN:
+        case TokenType.FUNC:
         case TokenType.VAR:
         case TokenType.FOR:
         case TokenType.IF:
