@@ -29,10 +29,12 @@ import {
 } from "./Stmt"
 import { Environment } from "./env"
 import { LoxCallable, LoxClock, LoxFunction, LoxObject } from "./types"
+import { scope } from "./resolver"
 
 class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   readonly globals: Environment = new Environment()
   private environment: Environment = this.globals
+  private readonly locals: Map<Expr, number> = new Map()
 
   constructor() {
     this.globals.define("clock", new LoxClock())
@@ -78,6 +80,10 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
   private execute(stmt: Stmt): void {
     stmt.accept(this)
+  }
+
+  resolve(expr: Expr, depth: number): void {
+    this.locals.set(expr, depth)
   }
 
   public visitBlockStmt(stmt: Block): void {
@@ -191,8 +197,6 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       args.push(this.evaluate(arg))
     }
 
-    console.log(callee)
-
     if (!(callee instanceof LoxCallable)) {
       throw new RuntimeError(expr.paren, `Can only call functions`)
     }
@@ -228,8 +232,11 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   }
 
   public visitFuncStmt(stmt: StmtFunc): void {
-    const fnName = stmt.name.lexeme;
-    this.environment.define(fnName, new LoxFunction(fnName, stmt.func, this.environment))
+    const fnName = stmt.name.lexeme
+    this.environment.define(
+      fnName,
+      new LoxFunction(fnName, stmt.func, this.environment)
+    )
   }
 
   public visitFuncExpr(expr: ExprFunc): LoxObject {
@@ -282,12 +289,27 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   public visitAssignExpr(expr: Assign): LoxObject {
     const value: LoxObject = this.evaluate(expr.value)
     //console.log(this.environment.values, this.environment.values.get('temp'), "temp")
-    this.environment.assign(expr.name, value)
+    const distance = this.locals.get(expr)
+
+    if (distance) {
+      this.environment.assignAt(distance, expr.name, value)
+    } else {
+      this.globals.assign(expr.name, value)
+    }
     return value
   }
 
   public visitVariableExpr(expr: Variable): LoxObject {
-    return this.environment.get(expr.name)
+    return this.lookUpVariable(expr.name, expr)
+  }
+
+  public lookUpVariable(name: Token, expr: Expr): LoxObject {
+    const distance = this.locals.get(expr)
+    if (distance || distance === 0) {
+      return this.environment.getAt(distance, name.lexeme)
+    } else {
+      return this.globals.get(name)
+    }
   }
 }
 

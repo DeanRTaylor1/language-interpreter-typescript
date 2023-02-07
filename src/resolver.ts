@@ -1,0 +1,228 @@
+import { Lox } from "."
+import { RuntimeError } from "./errors"
+import {
+  Assign,
+  Binary,
+  Call,
+  Expr,
+  Func as ExprFunc,
+  Grouping,
+  Literal,
+  Logical,
+  Unary,
+  Variable,
+  Visitor as ExprVisitor,
+} from "./Expr"
+import { Interpreter } from "./interpreter"
+import {
+  Block,
+  Break,
+  Expression,
+  Func as StmtFunc,
+  If,
+  Print,
+  Return,
+  Stmt,
+  Var,
+  Visitor as StmtVisitor,
+  While,
+} from "./Stmt"
+import { Token } from "./token-type"
+import { LoxObject } from "./types"
+
+export type scope = Map<string, boolean>
+
+export enum FunctionType {
+  NONE = "NONE",
+  FUNCTION = "FUNCTION",
+}
+
+export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
+  private readonly interpreter: Interpreter
+  private readonly scopes: scope[] = []
+  private currentFunction: FunctionType = FunctionType.NONE
+
+  constructor(interpreter: Interpreter) {
+    this.interpreter = interpreter
+  }
+
+  public visitBlockStmt(stmt: Block): void {
+    this.beginScope()
+    this.resolve(stmt.statements)
+    this.endScope()
+  }
+
+  public visitExpressionStmt(stmt: Expression): void {
+    this.resolve(stmt.expression)
+  }
+
+  public visitFuncStmt(stmt: StmtFunc): void {
+    //How will this work with anonymous functions?
+    this.declare(stmt.name)
+    this.define(stmt.name)
+
+    this.resolveStmtFunction(stmt, FunctionType.FUNCTION)
+  }
+
+  visitFuncExpr(expr: ExprFunc): void {
+    this.resolveExprFunction(expr, FunctionType.FUNCTION)
+  }
+
+  visitBreakStmt(stmt: Break): void {
+    return
+  }
+
+  public visitIfStmt(stmt: If): void {
+    this.resolve(stmt.condition)
+    this.resolve(stmt.thenBranch)
+    if (stmt.elseBranch) this.resolve(stmt.elseBranch)
+  }
+
+  public visitPrintStmt(stmt: Print): void {
+    this.resolve(stmt.expression)
+  }
+
+  public visitReturnStmt(stmt: Return): void {
+    if (this.currentFunction === FunctionType.NONE) {
+      Lox.tokenError(stmt.keyword, "Can't return from top-level code.")
+    }
+    if (stmt.value !== null) {
+      this.resolve(stmt.value)
+    }
+  }
+
+  public visitWhileStmt(stmt: While): void {
+    this.resolve(stmt.condition)
+    this.resolve(stmt.body)
+  }
+
+  public visitBinaryExpr(expr: Binary): void {
+    this.resolve(expr.left)
+    this.resolve(expr.right)
+  }
+
+  public visitCallExpr(expr: Call): void {
+    this.resolve(expr.callee)
+
+    for (let argument of expr.args) {
+      this.resolve(argument)
+    }
+  }
+
+  public visitGroupingExpr(expr: Grouping): void {
+    this.resolve(expr.expression)
+  }
+
+  public visitLiteralExpr(expr: Literal): void {
+    return
+  }
+
+  public visitLogicalExpr(expr: Logical): void {
+    this.resolve(expr.left)
+    this.resolve(expr.right)
+  }
+
+  public visitUnaryExpr(expr: Unary): void {
+    this.resolve(expr.right)
+  }
+
+  resolve(statements: Stmt[]): void
+  resolve(stmt: Stmt | Expr): void
+  resolve(statements: Stmt[] | Stmt | Expr): void {
+    //console.log(statements)
+    if (statements instanceof Array) {
+      for (let stmt of statements) {
+        this.resolve(stmt)
+      }
+    } else statements.accept(this)
+  }
+
+  public resolveStmtFunction(func: StmtFunc, type: FunctionType) {
+    const enclosingFunction = this.currentFunction
+    this.currentFunction = type
+    this.beginScope()
+    for (let param of func.func.params) {
+      this.declare(param)
+      this.define(param)
+    }
+    this.resolve(func.func.body)
+    this.endScope()
+    this.currentFunction = enclosingFunction
+  }
+
+  public resolveExprFunction(func: ExprFunc, type: FunctionType) {
+    const enclosingFunction = this.currentFunction
+    this.currentFunction = type
+    this.beginScope()
+    for (let param of func.params) {
+      this.declare(param)
+      this.define(param)
+    }
+    this.resolve(func.body)
+    this.endScope()
+    this.currentFunction = enclosingFunction
+  }
+
+  private peek(scopes: scope[]): scope {
+    return scopes[scopes.length - 1]
+  }
+  private beginScope() {
+    this.scopes.push(new Map<string, boolean>())
+  }
+
+  private endScope(): void {
+    this.scopes.pop()
+  }
+
+  private declare(name: Token): void {
+    if (this.scopes.length === 0) return
+    const scope: scope = this.peek(this.scopes)
+    if (scope.has(name.lexeme)) {
+      throw new RuntimeError(
+        name,
+        "Already defined variable with this name in this scope"
+      )
+    }
+    scope.set(name.lexeme, false)
+  }
+
+  private define(name: Token): void {
+    if (this.scopes.length === 0) return
+    this.peek(this.scopes).set(name.lexeme, true)
+  }
+
+  private resolveLocal(expr: Expr, name: Token): void {
+    for (let i = this.scopes.length - 1; i >= 0; i--) {
+      if (this.scopes[i].has(name.lexeme)) {
+        this.interpreter.resolve(expr, this.scopes.length - 1 - i)
+        return
+      }
+    }
+  }
+
+  public visitVarStmt(stmt: Var): void {
+    this.declare(stmt.name)
+    if (stmt.initialiser !== null) {
+      this.resolve(stmt.initialiser)
+    }
+    this.define(stmt.name)
+  }
+
+  public visitAssignExpr(expr: Assign): void {
+    this.resolve(expr.value)
+    this.resolveLocal(expr, expr.name)
+  }
+
+  public visitVariableExpr(expr: Variable): void {
+    if (
+      this.scopes.length !== 0 &&
+      this.peek(this.scopes).get(expr.name.lexeme) === false
+    ) {
+      Lox.err(
+        expr.name.line,
+        "Can't read local variable in its own initializer."
+      )
+    }
+    this.resolveLocal(expr, expr.name)
+  }
+}

@@ -5,6 +5,7 @@ import { RuntimeError } from "./errors"
 import { Expr } from "./Expr"
 import { Interpreter } from "./interpreter"
 import { Parser } from "./parser"
+import { Resolver } from "./resolver"
 import { Scanner } from "./scanner"
 import { Stmt } from "./Stmt"
 import { Token, TokenType } from "./token-type"
@@ -64,7 +65,7 @@ class Lox {
     let statements: Stmt[] = []
     let expr: Expr | null = null
     try {
-      [statements, expr] = parser.parse()
+      ;[statements, expr] = parser.parse()
     } catch (err) {
       console.error(err)
       process.exit(65)
@@ -73,6 +74,11 @@ class Lox {
     //check for errors
     if (this.hadError) process.exit(65)
     if (this.hadRuntimeError) process.exit(70)
+
+    const resolver = new Resolver(Lox.interpreter)
+    resolver.resolve(statements)
+    if (this.hadError) return
+    
     //interpret statements
     //parse statements to environment
     if (statements.length > 0) this.interpreter.interpret(statements)

@@ -1,10 +1,10 @@
-func whichFn(fn) {
-  print fn;
-}
+func b (fn) {
+    var a = 2;
 
-whichFn(func (b) {
- print b;
-});
+    return fn(a);
+  }
 
-func named(a) { print a; }
-whichFn(named);
+b(func(a) {
+  var c = 3;
+    print c + a;
+  });
