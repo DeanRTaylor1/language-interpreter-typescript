@@ -19,6 +19,7 @@ const start = () => {
     "Literal : value- LoxObject",
     "Logical : left- Expr, operator- Token, right- Expr",
     "LoxSet : object- Expr, name- Token, value- Expr",
+    "This : keyword- Token",
     "Unary : operator- Token, right- Expr",
     "Variable: name- Token",
   ])

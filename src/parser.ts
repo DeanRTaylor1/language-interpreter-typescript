@@ -12,6 +12,7 @@ import {
   Func as ExprFunc,
   LoxSet,
   LoxGet,
+  This
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -60,7 +61,6 @@ class Parser {
   }
 
   parse(): [Stmt[], Expr | null] {
-    console.log(this.tokens)
     const statements: Stmt[] = []
     try {
       while (!this.isAtEnd()) {
@@ -105,7 +105,6 @@ class Parser {
     while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
       methods.push(this.func("method"))
     }
-    console.log("methods: " + JSON.stringify(methods))
 
     this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
@@ -275,7 +274,6 @@ class Parser {
         return new Assign(name, value)
       } else if (expr instanceof LoxGet) {
         const get: LoxGet = expr
-        console.log(get)
         return new LoxSet(get.object, get.name, value)
       }
 
@@ -488,6 +486,7 @@ class Parser {
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new Literal(this.previous().literal)
     }
+    if(this.match(TokenType.THIS)) return new This(this.previous())
     if (this.match(TokenType.IDENTIFIER)) {
       return new Variable(this.previous())
     }

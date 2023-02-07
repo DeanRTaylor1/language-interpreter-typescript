@@ -1,7 +1,11 @@
-class Bacon {
-    eat() {
-        print "Crunch crunch crunch!";
-      }
+class Cake { 
+  taste() {
+      var adj = "delicious";
+      print "The " + this.flavour + " cake is " + adj + "!";
+    }
+
   }
 
-  Bacon().eat();
+  var cake = Cake();
+  cake.flavour = "German chocolate";
+  cake.taste();

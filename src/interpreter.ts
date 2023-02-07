@@ -14,6 +14,7 @@ import {
   Visitor as ExprVisitor,
   LoxGet,
   LoxSet,
+  This,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -166,6 +167,10 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
     object.set(expr.name, value)
     return value
+  }
+
+  public visitThisExpr(expr: This): LoxObject {
+      return this.lookUpVariable(expr.keyword, expr)
   }
 
   public visitGroupingExpr(expr: Grouping) {

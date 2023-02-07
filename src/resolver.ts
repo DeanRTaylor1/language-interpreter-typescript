@@ -11,6 +11,7 @@ import {
   Logical,
   LoxGet,
   LoxSet,
+  This,
   Unary,
   Variable,
   Visitor as ExprVisitor,
@@ -38,7 +39,7 @@ export type scope = Map<string, boolean>
 export enum FunctionType {
   NONE = "NONE",
   FUNCTION = "FUNCTION",
-  METHOD = "METHOD"
+  METHOD = "METHOD",
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
@@ -59,11 +60,15 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   public visitClassStmt(stmt: Class): void {
     this.declare(stmt.name)
     this.define(stmt.name)
+    this.beginScope()
+    this.peek(this.scopes).set("this", true)
 
-    for(let method of stmt.methods) {
-      const declaration:FunctionType = FunctionType.METHOD;
+    for (let method of stmt.methods) {
+      const declaration: FunctionType = FunctionType.METHOD
       this.resolveStmtFunction(method, declaration)
     }
+
+    this.endScope()
   }
 
   public visitExpressionStmt(stmt: Expression): void {
@@ -143,6 +148,10 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   public visitLoxSetExpr(expr: LoxSet): void {
     this.resolve(expr.value)
     this.resolve(expr.object)
+  }
+
+  public visitThisExpr(expr: This): void {
+    this.resolveLocal(expr, expr.keyword)
   }
 
   public visitUnaryExpr(expr: Unary): void {

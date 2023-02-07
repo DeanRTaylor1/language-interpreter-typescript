@@ -55,6 +55,12 @@ export class LoxFunction extends LoxCallable {
     }
   }
 
+  bind(instance: LoxInstance): LoxFunction {
+    const environment: Environment = new Environment(this.closure)
+    environment.define("this", instance)
+    return new LoxFunction(this.name!, this.declaration, environment)
+  }
+
   call(interpreter: Interpreter, args: LoxObject[]) {
     const environment: Environment = new Environment(this.closure)
     for (let i = 0; i < this.declaration.params.length; i++) {
@@ -95,11 +101,8 @@ class LoxInstance {
     if (this.fields.has(name.lexeme)) {
       return this.fields.get(name.lexeme) as LoxObject
     }
-    console.log(this.fields, this.klass)
     const method: LoxFunction | null = this.klass.findMethod(name.lexeme)
-    if(method !== null) {
-      return method
-    }
+    if (method !== null) return method.bind(this)
 
     throw new RuntimeError(name, "Undefined property '" + name.lexeme + "'.")
   }
@@ -118,7 +121,6 @@ class LoxClass extends LoxCallable {
 
   constructor(name: string, methods: Map<string, LoxFunction>) {
     super()
-    console.log("class methods: " + JSON.stringify(methods))
     this.name = name
     this.methods = methods
   }
