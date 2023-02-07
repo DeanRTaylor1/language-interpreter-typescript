@@ -108,7 +108,8 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       const func = new LoxFunction(
         method.name.lexeme,
         method.func,
-        this.environment
+        this.environment,
+        method.name.lexeme === "init"
       )
       methods.set(method.name.lexeme, func)
     }

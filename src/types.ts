@@ -41,11 +41,13 @@ export class LoxFunction extends LoxCallable {
   private readonly name?: string
   private readonly declaration: ExprFunc
   private readonly closure: Environment
+  private readonly isInitialiser: Boolean
 
   constructor(
     name: string | null,
     declaration: ExprFunc,
-    closure: Environment
+    closure: Environment,
+    isInitialiser?: Boolean
   ) {
     super()
     this.declaration = declaration
@@ -53,12 +55,20 @@ export class LoxFunction extends LoxCallable {
     if (!!name) {
       this.name = name
     }
+    !!isInitialiser
+      ? (this.isInitialiser = isInitialiser)
+      : (this.isInitialiser = false)
   }
 
   bind(instance: LoxInstance): LoxFunction {
     const environment: Environment = new Environment(this.closure)
     environment.define("this", instance)
-    return new LoxFunction(this.name!, this.declaration, environment)
+    return new LoxFunction(
+      this.name!,
+      this.declaration,
+      environment,
+      this.isInitialiser
+    )
   }
 
   call(interpreter: Interpreter, args: LoxObject[]) {
@@ -71,9 +81,11 @@ export class LoxFunction extends LoxCallable {
       interpreter.executeBlock(this.declaration.body, environment)
     } catch (err: any) {
       if (err instanceof LoxFunction.Return) {
+        if (this.isInitialiser) return this.closure.getAt(0, "this")
         return err.value
       } else throw err
     }
+    if (this.isInitialiser) return this.closure.getAt(0, "this")
     return null
   }
 
@@ -134,11 +146,18 @@ class LoxClass extends LoxCallable {
 
   public call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
     const instance = new LoxInstance(this)
+    const initialiser: LoxFunction | null = this.findMethod("init")
+    if (initialiser !== null) {
+      initialiser.bind(instance).call(interpreter, args)
+    }
+
     return instance
   }
   //TODO update to allow constructor methods
   public arity(): number {
-    return 0
+    const initialiser: LoxFunction | null = this.findMethod("init")
+    if (initialiser === null) return 0
+    return initialiser.arity()
   }
 
   public toString() {

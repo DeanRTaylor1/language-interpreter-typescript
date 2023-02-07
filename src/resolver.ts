@@ -39,13 +39,20 @@ export type scope = Map<string, boolean>
 export enum FunctionType {
   NONE = "NONE",
   FUNCTION = "FUNCTION",
+  INITIALISER = "INITIALISER",
   METHOD = "METHOD",
+}
+
+export enum ClassType {
+  NONE = "NONE",
+  CLASS = "CLASS",
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   private readonly interpreter: Interpreter
   private readonly scopes: scope[] = []
   private currentFunction: FunctionType = FunctionType.NONE
+  private currentClass: ClassType = ClassType.NONE
 
   constructor(interpreter: Interpreter) {
     this.interpreter = interpreter
@@ -58,17 +65,24 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   public visitClassStmt(stmt: Class): void {
+    const enclosingClass = this.currentClass
+    this.currentClass = ClassType.CLASS
+
     this.declare(stmt.name)
     this.define(stmt.name)
     this.beginScope()
     this.peek(this.scopes).set("this", true)
 
     for (let method of stmt.methods) {
-      const declaration: FunctionType = FunctionType.METHOD
+      let declaration: FunctionType = FunctionType.METHOD
+      if (method.name.lexeme === "init") {
+        declaration = FunctionType.INITIALISER
+      }
       this.resolveStmtFunction(method, declaration)
     }
 
     this.endScope()
+    this.currentClass = enclosingClass
   }
 
   public visitExpressionStmt(stmt: Expression): void {
@@ -106,6 +120,9 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
       Lox.tokenError(stmt.keyword, "Can't return from top-level code.")
     }
     if (stmt.value !== null) {
+      if (this.currentFunction === FunctionType.INITIALISER) {
+        Lox.tokenError(stmt.keyword, "Can't return a value from an initializer")
+      }
       this.resolve(stmt.value)
     }
   }
@@ -151,6 +168,12 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   public visitThisExpr(expr: This): void {
+    if (this.currentClass === ClassType.NONE) {
+      return Lox.tokenError(
+        expr.keyword,
+        "Can't use 'this' outside of a class."
+      )
+    }
     this.resolveLocal(expr, expr.keyword)
   }
 
