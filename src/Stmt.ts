@@ -6,6 +6,7 @@ import { Token } from './token-type';
 
 export interface Visitor<R> {
    visitBlockStmt(stmt: Block): R
+   visitClassStmt(stmt: Class): R
    visitBreakStmt(stmt: Break): R
    visitExpressionStmt(stmt: Expression): R
    visitFuncStmt(stmt: Func): R
@@ -24,6 +25,20 @@ export class Block implements Stmt {
 
   accept<R>(visitor: Visitor<R>){
     return visitor.visitBlockStmt(this)
+  }
+}
+
+export class Class implements Stmt {
+  readonly name: Token;
+  readonly methods: Func[];
+
+  constructor(name: Token, methods: Func[]) {
+    this.name = name;
+    this.methods = methods; 
+ }
+
+  accept<R>(visitor: Visitor<R>){
+    return visitor.visitClassStmt(this)
   }
 }
 

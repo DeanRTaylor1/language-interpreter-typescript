@@ -12,6 +12,8 @@ import {
   Variable,
   Func as ExprFunc,
   Visitor as ExprVisitor,
+  LoxGet,
+  LoxSet,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -26,9 +28,17 @@ import {
   Break,
   Func as StmtFunc,
   Return,
+  Class,
 } from "./Stmt"
 import { Environment } from "./env"
-import { LoxCallable, LoxClock, LoxFunction, LoxObject } from "./types"
+import {
+  LoxCallable,
+  LoxClass,
+  LoxClock,
+  LoxFunction,
+  LoxInstance,
+  LoxObject,
+} from "./types"
 import { scope } from "./resolver"
 
 class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
@@ -90,6 +100,21 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     this.executeBlock(stmt.statements, new Environment(this.environment))
   }
 
+  public visitClassStmt(stmt: Class): void {
+    this.environment.define(stmt.name.lexeme, null)
+    const methods: Map<string, LoxFunction> = new Map()
+    for (let method of stmt.methods) {
+      const func = new LoxFunction(
+        method.name.lexeme,
+        method.func,
+        this.environment
+      )
+      methods.set(method.name.lexeme, func)
+    }
+    const klass = new LoxClass(stmt.name.lexeme, methods)
+    this.environment.assign(stmt.name, klass)
+  }
+
   executeBlock(statements: Stmt[], environment: Environment) {
     //when we find a block of code, we update the current scope and store the previous scope (which could have it's own stored previous scope we then operate the block of code using the new local scope)
     const previous: Environment = this.environment
@@ -128,6 +153,19 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       if (!left) return left
     }
     return this.evaluate(expr.right)
+  }
+
+  public visitLoxSetExpr(expr: LoxSet): LoxObject {
+    const object: LoxObject = this.evaluate(expr.object)
+
+    if (!(object instanceof LoxInstance)) {
+      throw new RuntimeError(expr.name, "Only instances have fields")
+    }
+
+    const value: LoxObject = this.evaluate(expr.value)
+
+    object.set(expr.name, value)
+    return value
   }
 
   public visitGroupingExpr(expr: Grouping) {
@@ -209,6 +247,14 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       )
     }
     return func.call(this, args)
+  }
+
+  public visitLoxGetExpr(expr: LoxGet): LoxObject {
+    const object: LoxObject = this.evaluate(expr.object)
+    if (object instanceof LoxInstance) {
+      return object.get(expr.name)
+    }
+    throw new RuntimeError(expr.name, "Only instances have properties.")
   }
 
   public visitUnaryExpr(expr: Unary): LoxObject {

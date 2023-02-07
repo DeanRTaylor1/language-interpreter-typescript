@@ -1,8 +1,17 @@
 import { Environment } from "./env"
 import { Interpreter } from "./interpreter"
 import { Func as ExprFunc } from "./Expr"
+import { RuntimeError } from "./errors"
+import { Token } from "./token-type"
 
-type LoxObject = LoxCallable | string | number | boolean | null
+type LoxObject =
+  | LoxClass
+  | LoxInstance
+  | LoxCallable
+  | string
+  | number
+  | boolean
+  | null
 
 export abstract class LoxCallable {
   abstract call(interpreter: Interpreter, args: LoxObject[]): LoxObject
@@ -29,16 +38,20 @@ export class LoxFunction extends LoxCallable {
     }
   }
 
-  private readonly name?: string ;
+  private readonly name?: string
   private readonly declaration: ExprFunc
   private readonly closure: Environment
 
-  constructor(name: string | null, declaration: ExprFunc, closure: Environment) {
+  constructor(
+    name: string | null,
+    declaration: ExprFunc,
+    closure: Environment
+  ) {
     super()
     this.declaration = declaration
     this.closure = closure
-    if(!!name) {
-      this.name = name;
+    if (!!name) {
+      this.name = name
     }
   }
 
@@ -63,11 +76,72 @@ export class LoxFunction extends LoxCallable {
   }
 
   public toString(): string {
-    if(this.name === undefined) {
-      return '<fn>'
+    if (this.name === undefined) {
+      return "<fn>"
     }
     return `<fn ${this.name}>`
   }
 }
 
-export { LoxObject }
+class LoxInstance {
+  private klass: LoxClass
+  private readonly fields: Map<string, LoxObject> = new Map()
+
+  constructor(klass: LoxClass) {
+    this.klass = klass
+  }
+
+  get(name: Token): LoxObject {
+    if (this.fields.has(name.lexeme)) {
+      return this.fields.get(name.lexeme) as LoxObject
+    }
+    console.log(this.fields, this.klass)
+    const method: LoxFunction | null = this.klass.findMethod(name.lexeme)
+    if(method !== null) {
+      return method
+    }
+
+    throw new RuntimeError(name, "Undefined property '" + name.lexeme + "'.")
+  }
+
+  set(name: Token, value: LoxObject) {
+    this.fields.set(name.lexeme, value)
+  }
+  public toString() {
+    return this.klass.name + " instance"
+  }
+}
+
+class LoxClass extends LoxCallable {
+  readonly name: string
+  private readonly methods: Map<string, LoxFunction>
+
+  constructor(name: string, methods: Map<string, LoxFunction>) {
+    super()
+    console.log("class methods: " + JSON.stringify(methods))
+    this.name = name
+    this.methods = methods
+  }
+
+  findMethod(name: string): LoxFunction | null {
+    if (this.methods.has(name)) {
+      return this.methods.get(name) as LoxFunction
+    }
+    return null
+  }
+
+  public call(interpreter: Interpreter, args: LoxObject[]): LoxObject {
+    const instance = new LoxInstance(this)
+    return instance
+  }
+  //TODO update to allow constructor methods
+  public arity(): number {
+    return 0
+  }
+
+  public toString() {
+    return this.name
+  }
+}
+
+export { LoxObject, LoxClass, LoxInstance }

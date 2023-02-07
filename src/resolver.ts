@@ -9,6 +9,8 @@ import {
   Grouping,
   Literal,
   Logical,
+  LoxGet,
+  LoxSet,
   Unary,
   Variable,
   Visitor as ExprVisitor,
@@ -17,6 +19,7 @@ import { Interpreter } from "./interpreter"
 import {
   Block,
   Break,
+  Class,
   Expression,
   Func as StmtFunc,
   If,
@@ -28,13 +31,14 @@ import {
   While,
 } from "./Stmt"
 import { Token } from "./token-type"
-import { LoxObject } from "./types"
+import { LoxInstance, LoxObject } from "./types"
 
 export type scope = Map<string, boolean>
 
 export enum FunctionType {
   NONE = "NONE",
   FUNCTION = "FUNCTION",
+  METHOD = "METHOD"
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
@@ -50,6 +54,16 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     this.beginScope()
     this.resolve(stmt.statements)
     this.endScope()
+  }
+
+  public visitClassStmt(stmt: Class): void {
+    this.declare(stmt.name)
+    this.define(stmt.name)
+
+    for(let method of stmt.methods) {
+      const declaration:FunctionType = FunctionType.METHOD;
+      this.resolveStmtFunction(method, declaration)
+    }
   }
 
   public visitExpressionStmt(stmt: Expression): void {
@@ -109,6 +123,10 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     }
   }
 
+  public visitLoxGetExpr(expr: LoxGet): void {
+    this.resolve(expr.object)
+  }
+
   public visitGroupingExpr(expr: Grouping): void {
     this.resolve(expr.expression)
   }
@@ -120,6 +138,11 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   public visitLogicalExpr(expr: Logical): void {
     this.resolve(expr.left)
     this.resolve(expr.right)
+  }
+
+  public visitLoxSetExpr(expr: LoxSet): void {
+    this.resolve(expr.value)
+    this.resolve(expr.object)
   }
 
   public visitUnaryExpr(expr: Unary): void {

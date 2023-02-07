@@ -10,6 +10,8 @@ import {
   Logical,
   Call,
   Func as ExprFunc,
+  LoxSet,
+  LoxGet,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -23,6 +25,7 @@ import {
   Break,
   Func as StmtFunc,
   Return,
+  Class,
 } from "./Stmt"
 import { RuntimeError } from "./errors"
 
@@ -57,8 +60,8 @@ class Parser {
   }
 
   parse(): [Stmt[], Expr | null] {
+    console.log(this.tokens)
     const statements: Stmt[] = []
-    //console.log(statements)
     try {
       while (!this.isAtEnd()) {
         statements.push(this.declaration())
@@ -79,6 +82,7 @@ class Parser {
 
   private declaration(): Stmt {
     try {
+      if (this.match(TokenType.CLASS)) return this.classDeclaration()
       if (this.check(TokenType.FUNC) && this.checkNext(TokenType.IDENTIFIER)) {
         this.consume(TokenType.FUNC, "null")
         return this.func("function")
@@ -91,6 +95,21 @@ class Parser {
       }
       throw err
     }
+  }
+
+  private classDeclaration(): Stmt {
+    const name: Token = this.consume(TokenType.IDENTIFIER, "Expect class name.")
+    this.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+
+    const methods: StmtFunc[] = []
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      methods.push(this.func("method"))
+    }
+    console.log("methods: " + JSON.stringify(methods))
+
+    this.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
+
+    return new Class(name, methods)
   }
 
   private statement(): Stmt {
@@ -254,6 +273,10 @@ class Parser {
       if (expr instanceof Variable) {
         const name: Token = expr.name
         return new Assign(name, value)
+      } else if (expr instanceof LoxGet) {
+        const get: LoxGet = expr
+        console.log(get)
+        return new LoxSet(get.object, get.name, value)
       }
 
       Parser.error(equals, "Invalid assignment target")
@@ -443,6 +466,12 @@ class Parser {
     while (true) {
       if (this.match(TokenType.LEFT_PAREN)) {
         expr = this.finishCall(expr)
+      } else if (this.match(TokenType.DOT)) {
+        const name: Token = this.consume(
+          TokenType.IDENTIFIER,
+          "Expect property name after '.'."
+        )
+        expr = new LoxGet(expr, name)
       } else {
         break
       }

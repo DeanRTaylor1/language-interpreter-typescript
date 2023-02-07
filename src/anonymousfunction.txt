@@ -1,0 +1,10 @@
+func b (fn) {
+    var a = 2;
+
+    return fn(a);
+  }
+
+b(func(a) {
+  var c = 3;
+    print c + a;
+  });

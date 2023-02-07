@@ -10,9 +10,11 @@ export interface Visitor<R> {
    visitBinaryExpr(expr: Binary): R
    visitFuncExpr(expr: Func): R
    visitCallExpr(expr: Call): R
+   visitLoxGetExpr(expr: LoxGet): R
    visitGroupingExpr(expr: Grouping): R
    visitLiteralExpr(expr: Literal): R
    visitLogicalExpr(expr: Logical): R
+   visitLoxSetExpr(expr: LoxSet): R
    visitUnaryExpr(expr: Unary): R
    visitVariableExpr(expr: Variable): R
  }
@@ -76,6 +78,20 @@ export class Call implements Expr {
   }
 }
 
+export class LoxGet implements Expr {
+  readonly object: Expr;
+  readonly name: Token;
+
+  constructor(object: Expr, name: Token) {
+    this.object = object;
+    this.name = name; 
+ }
+
+  accept<R>(visitor: Visitor<R>){
+    return visitor.visitLoxGetExpr(this)
+  }
+}
+
 export class Grouping implements Expr {
   readonly expression: Expr;
 
@@ -113,6 +129,22 @@ export class Logical implements Expr {
 
   accept<R>(visitor: Visitor<R>){
     return visitor.visitLogicalExpr(this)
+  }
+}
+
+export class LoxSet implements Expr {
+  readonly object: Expr;
+  readonly name: Token;
+  readonly value: Expr;
+
+  constructor(object: Expr, name: Token, value: Expr) {
+    this.object = object;
+    this.name = name;
+    this.value = value; 
+ }
+
+  accept<R>(visitor: Visitor<R>){
+    return visitor.visitLoxSetExpr(this)
   }
 }
 
