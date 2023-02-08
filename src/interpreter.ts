@@ -55,12 +55,10 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   interpret(statements: Stmt[] | Expr): void {
     if (statements instanceof Array) {
       try {
-        //console.log(statements)
         for (const statement of statements) {
           statement && this.execute(statement)
         }
       } catch (err: any) {
-        console.log("error")
         Lox.runtimeError(err)
       }
     } else {
@@ -114,9 +112,7 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       }
     }
 
-
     this.environment.define(stmt.name.lexeme, null)
-
 
     let environment = this.environment
     if (!!stmt.superclass) {
@@ -136,7 +132,6 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
       methods.set(method.name.lexeme, func)
     }
 
-
     let klass: LoxClass
     if (!!stmt.superclass) {
       klass = new LoxClass(stmt.name.lexeme, methods, superclass!)
@@ -145,9 +140,8 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     }
 
     if (superclass !== null && environment.enclosing !== null) {
-     environment = environment.enclosing
+      environment = environment.enclosing
     }
-
 
     this.environment.assign(stmt.name, klass)
   }
@@ -243,12 +237,10 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
     switch (expr.operator.type) {
       case TokenType.BANG_EQUAL:
-        //console.log(expr.operator.type, left, right, left !== right)
         return left! !== right!
       case TokenType.EQUAL_EQUAL:
         return this.isEqual(left, right)
       case TokenType.GREATER:
-        //console.log(expr.operator.type, left, right, left === right)
         this.checkNumberOperands(expr.operator, left, right)
         return +left! > +right!
 
@@ -399,7 +391,6 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
 
   public visitAssignExpr(expr: Assign): LoxObject {
     const value: LoxObject = this.evaluate(expr.value)
-    //console.log(this.environment.values, this.environment.values.get('temp'), "temp")
     const distance = this.locals.get(expr)
 
     if (distance) {

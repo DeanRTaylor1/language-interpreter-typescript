@@ -47,6 +47,7 @@ export enum FunctionType {
 export enum ClassType {
   NONE = "NONE",
   CLASS = "CLASS",
+  SUBCLASS = "SUBCLASS",
 }
 
 export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
@@ -76,6 +77,7 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
       Lox.tokenError(stmt.superclass.name, "A class can't inherit from itself.")
     }
     if (stmt.superclass) {
+      this.currentClass = ClassType.SUBCLASS
       this.resolve(stmt.superclass)
     }
 
@@ -182,7 +184,12 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   }
 
   public visitSuperExpr(expr: Super): void {
-      this.resolveLocal(expr, expr.keyword)
+    if (this.currentClass === ClassType.NONE) {
+      Lox.tokenError(expr.keyword, "Can't use 'super' outside of a class!")
+    } else if (this.currentClass !== ClassType.SUBCLASS) {
+      Lox.tokenError(expr.keyword, "Can't use 'super' witout a superclass.")
+    }
+    this.resolveLocal(expr, expr.keyword)
   }
 
   public visitThisExpr(expr: This): void {
@@ -202,7 +209,6 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   resolve(statements: Stmt[]): void
   resolve(stmt: Stmt | Expr): void
   resolve(statements: Stmt[] | Stmt | Expr): void {
-    //console.log(statements)
     if (statements instanceof Array) {
       for (let stmt of statements) {
         this.resolve(stmt)

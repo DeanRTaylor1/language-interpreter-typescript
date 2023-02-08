@@ -23,7 +23,7 @@ export class Environment {
   }
 
   ancestor(distance: number): Environment {
-    if(distance === 0) return this
+    if (distance === 0) return this
     let environment: Environment = this
 
     for (let i = 0; i < distance; i++) {
@@ -35,7 +35,6 @@ export class Environment {
   }
 
   get(name: Token): LoxObject {
-    //console.log(name.lexeme in this.values)
     if (name.lexeme in this.values) {
       return this.values[name.lexeme]
     }
