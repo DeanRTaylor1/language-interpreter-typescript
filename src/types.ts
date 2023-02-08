@@ -130,16 +130,25 @@ class LoxInstance {
 class LoxClass extends LoxCallable {
   readonly name: string
   private readonly methods: Map<string, LoxFunction>
+  readonly superclass?: LoxClass
 
-  constructor(name: string, methods: Map<string, LoxFunction>) {
+  constructor(
+    name: string,
+    methods: Map<string, LoxFunction>,
+    superclass?: LoxClass
+  ) {
     super()
     this.name = name
     this.methods = methods
+    this.superclass = superclass
   }
 
   findMethod(name: string): LoxFunction | null {
     if (this.methods.has(name)) {
       return this.methods.get(name) as LoxFunction
+    }
+    if (this.superclass) {
+      return this.superclass.findMethod(name)
     }
     return null
   }

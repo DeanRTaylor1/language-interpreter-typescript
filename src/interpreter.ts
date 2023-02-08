@@ -15,6 +15,7 @@ import {
   LoxGet,
   LoxSet,
   This,
+  Super,
 } from "./Expr"
 import { Token, TokenType } from "./token-type"
 import {
@@ -102,18 +103,52 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
   }
 
   public visitClassStmt(stmt: Class): void {
+    let superclass: LoxObject | null = null
+    if (!!stmt.superclass) {
+      superclass = this.evaluate(stmt.superclass)
+      if (!(superclass instanceof LoxClass)) {
+        throw new RuntimeError(
+          stmt.superclass.name,
+          "Superclass must be a class."
+        )
+      }
+    }
+
+
     this.environment.define(stmt.name.lexeme, null)
+
+
+    let environment = this.environment
+    if (!!stmt.superclass) {
+      //if there is a superclass we add the parent class in scope stored in the value super
+      environment = new Environment(environment)
+      environment.define("super", superclass)
+    }
+
     const methods: Map<string, LoxFunction> = new Map()
     for (let method of stmt.methods) {
       const func = new LoxFunction(
         method.name.lexeme,
         method.func,
-        this.environment,
+        environment,
         method.name.lexeme === "init"
       )
       methods.set(method.name.lexeme, func)
     }
-    const klass = new LoxClass(stmt.name.lexeme, methods)
+
+
+    let klass: LoxClass
+    if (!!stmt.superclass) {
+      klass = new LoxClass(stmt.name.lexeme, methods, superclass!)
+    } else {
+      klass = new LoxClass(stmt.name.lexeme, methods)
+    }
+
+    if (superclass !== null && environment.enclosing !== null) {
+     environment = environment.enclosing
+    }
+
+
     this.environment.assign(stmt.name, klass)
   }
 
@@ -170,8 +205,32 @@ class Interpreter implements ExprVisitor<LoxObject>, StmntVisitor<void> {
     return value
   }
 
+  public visitSuperExpr(expr: Super): LoxObject {
+    const distance: number = this.locals.get(expr)!
+    const superclass: LoxClass = this.environment.getAt(
+      distance,
+      "super"
+    )! as LoxClass
+
+    const obj: LoxObject = this.environment.getAt(
+      distance - 1,
+      "this"
+    ) as LoxInstance
+
+    const method: LoxFunction | null = superclass.findMethod(expr.method.lexeme)
+
+    if (method === null) {
+      throw new RuntimeError(
+        expr.method,
+        "Undefined property " + expr.method.lexeme + "."
+      )
+    }
+
+    return method.bind(obj)
+  }
+
   public visitThisExpr(expr: This): LoxObject {
-      return this.lookUpVariable(expr.keyword, expr)
+    return this.lookUpVariable(expr.keyword, expr)
   }
 
   public visitGroupingExpr(expr: Grouping) {

@@ -15,6 +15,7 @@ export interface Visitor<R> {
   visitLiteralExpr(expr: Literal): R
   visitLogicalExpr(expr: Logical): R
   visitLoxSetExpr(expr: LoxSet): R
+  visitSuperExpr(expr: Super): R
   visitThisExpr(expr: This): R
   visitUnaryExpr(expr: Unary): R
   visitVariableExpr(expr: Variable): R
@@ -146,6 +147,20 @@ export class LoxSet implements Expr {
 
   accept<R>(visitor: Visitor<R>) {
     return visitor.visitLoxSetExpr(this)
+  }
+}
+
+export class Super implements Expr {
+  readonly keyword: Token
+  readonly method: Token
+
+  constructor(keyword: Token, method: Token) {
+    this.keyword = keyword
+    this.method = method
+  }
+
+  accept<R>(visitor: Visitor<R>) {
+    return visitor.visitSuperExpr(this)
   }
 }
 

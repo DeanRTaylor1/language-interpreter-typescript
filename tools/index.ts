@@ -19,6 +19,7 @@ const start = () => {
     "Literal : value- LoxObject",
     "Logical : left- Expr, operator- Token, right- Expr",
     "LoxSet : object- Expr, name- Token, value- Expr",
+    "Super : keyword- Token, method- Token",
     "This : keyword- Token",
     "Unary : operator- Token, right- Expr",
     "Variable: name- Token",
@@ -26,7 +27,7 @@ const start = () => {
 
   defineAst(outputDir, "Stmt", [
     "Block : statements- Stmt[]",
-    "Class : name- Token, methods- Func[]",
+    "Class : name- Token, methods- Func[], superclass?- Variable",
     "Break : ",
     "Expression : expression- Expr",
     "Func : name- Token, func- ExprFunc",
@@ -51,7 +52,7 @@ const defineAst = (
 
   writer.write(`import { Token } from './token-type';\r\n `)
   if (baseName !== "Expr") {
-       writer.write(`import { Expr, Func as ExprFunc } from './Expr';\r\n `)
+       writer.write(`import { Variable, Expr, Func as ExprFunc } from './Expr';\r\n `)
   }
   if (baseName === "Expr") writer.write(`import { Stmt } from './Stmt';\r\n `)
   if (baseName === "Expr")

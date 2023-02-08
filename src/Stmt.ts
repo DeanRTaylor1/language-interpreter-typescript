@@ -1,5 +1,5 @@
 import { Token } from './token-type';
- import { Expr, Func as ExprFunc } from './Expr';
+ import { Variable, Expr, Func as ExprFunc } from './Expr';
  export interface Stmt { 
  accept<R>(visitor: Visitor<R>): R
 } 
@@ -31,10 +31,12 @@ export class Block implements Stmt {
 export class Class implements Stmt {
   readonly name: Token;
   readonly methods: Func[];
+  readonly superclass?: Variable;
 
-  constructor(name: Token, methods: Func[]) {
+  constructor(name: Token, methods: Func[], superclass?: Variable) {
     this.name = name;
-    this.methods = methods; 
+    this.methods = methods;
+    this.superclass = superclass; 
  }
 
   accept<R>(visitor: Visitor<R>){

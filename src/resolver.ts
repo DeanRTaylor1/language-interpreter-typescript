@@ -11,6 +11,7 @@ import {
   Logical,
   LoxGet,
   LoxSet,
+  Super,
   This,
   Unary,
   Variable,
@@ -70,6 +71,18 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
 
     this.declare(stmt.name)
     this.define(stmt.name)
+
+    if (stmt.superclass && stmt.name.lexeme === stmt.superclass.name.lexeme) {
+      Lox.tokenError(stmt.superclass.name, "A class can't inherit from itself.")
+    }
+    if (stmt.superclass) {
+      this.resolve(stmt.superclass)
+    }
+
+    if (stmt.superclass) {
+      this.beginScope()
+      this.peek(this.scopes).set("super", true)
+    }
     this.beginScope()
     this.peek(this.scopes).set("this", true)
 
@@ -82,6 +95,7 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
     }
 
     this.endScope()
+    if (stmt.superclass) this.endScope()
     this.currentClass = enclosingClass
   }
 
@@ -165,6 +179,10 @@ export class Resolver implements ExprVisitor<void>, StmtVisitor<void> {
   public visitLoxSetExpr(expr: LoxSet): void {
     this.resolve(expr.value)
     this.resolve(expr.object)
+  }
+
+  public visitSuperExpr(expr: Super): void {
+      this.resolveLocal(expr, expr.keyword)
   }
 
   public visitThisExpr(expr: This): void {

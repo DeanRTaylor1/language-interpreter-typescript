@@ -64,6 +64,7 @@ class Lox {
     const parser = new Parser(tokens)
     let statements: Stmt[] = []
     let expr: Expr | null = null
+   
 
     try {
       [statements, expr] = parser.parse()
@@ -79,7 +80,7 @@ class Lox {
     const resolver = new Resolver(Lox.interpreter)
     resolver.resolve(statements)
     if (this.hadError) return
-
+    
     //interpret statements
     //parse statements to environment
     if (statements.length > 0) this.interpreter.interpret(statements)
