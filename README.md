@@ -2,57 +2,58 @@
 
 This is a language interpreter written for the toy language Lox.
 It features a REPL mode you can use by running ts-node-dev ./index.ts
-Or a file interpreter you can use by running ts-node-dev ./index.ts ""FILENAME""
+Or a file interpreter you can use by running **ts-node-dev ./index.ts ""FILENAME""**
 
-## Language features
-Declare variables with var
-``` var = "test" ``` 
+## Language Features
 
-## Supports OOP class based inheritance 
+### Declare variables with var 
 
-  ```class baseClass {
-    init(superstring1, string1, var2) {
-    this.string1 = string1
-    this.var2 = var2
-    super.init(superstring1)
-  } 
+    var = "test
+### Supports OOP class based inheritance 
+
+    class baseClass {
+	    init(superstring1, string1, var2) {
+	    this.string1 = string1
+	    this.var2 = var2
+	    super.init(superstring1)
+	  } 
   
   
     func1 {
-    print "executing function"
+	    print "executing function"
+	    }
     }
-    }
+### functions are first class and support closures such as:
 
+    func returnFunction() {
+	  var outside = "outside";
 
-## functions are first class and support closures such as:
+	  func inner() {
+	    print outside;
+	  }
 
-```func returnFunction() {
-  var outside = "outside";
+	  return inner;
+	}
 
-  func inner() {
-    print outside;
-  }
+	var fn = returnFunction();
+	fn();
+### Declare variables with var 
 
-  return inner;
-}
+    for (var a = 1; a < 10; a = a + 1) {
+	  print a;
+	}
+----
 
-var fn = returnFunction();
-fn();```
+    var a = 1;
+	while (a < 10) {
+	  print a;
+	  a = a + 1;
+	}
+ ---
 
-## This interpreter supports control flow with if else and for/while loops:
+    if (condition) {
+	  print "yes";
+	} else {
+	  print "no";
+	}
 
-```for (var a = 1; a < 10; a = a + 1) {
-  print a;
-}```
-
-```var a = 1;
-while (a < 10) {
-  print a;
-  a = a + 1;
-}```
-
-```if (condition) {
-  print "yes";
-} else {
-  print "no";
-}```
