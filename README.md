@@ -14,9 +14,9 @@ Declare variables with var
   this.string1 = string1
   this.var2 = var2
   super.init(superstring1)
-  }
+  }```
   
-  func1 {
+ ``` func1 {
     print "executing function"
     }
 }</code>```
