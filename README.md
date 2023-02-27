@@ -6,20 +6,24 @@ Or a file interpreter you can use by running ts-node-dev ./index.ts ""FILENAME""
 
 ## Language features
 Declare variables with var
-```var = "test"``` 
+``` var = "test" ``` 
 
 ## Supports OOP class based inheritance 
-``` <code> class baseClass {
-  init(superstring1, string1, var2) {
-  this.string1 = string1
-  this.var2 = var2
-  super.init(superstring1)
-  } ```
+
+  class baseClass {
+    init(superstring1, string1, var2) {
+    this.string1 = string1
+    this.var2 = var2
+    super.init(superstring1)
+  } 
   
- ``` func1 {
+  
+  
+ func1 {
     print "executing function"
     }
-}</code>```
+  }
+
 
 ##functions are first class and support closures such as:
 
