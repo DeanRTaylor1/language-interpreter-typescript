@@ -10,7 +10,7 @@ Declare variables with var
 
 ## Supports OOP class based inheritance 
 
-  class baseClass {
+  ```class baseClass {
     init(superstring1, string1, var2) {
     this.string1 = string1
     this.var2 = var2
@@ -18,14 +18,13 @@ Declare variables with var
   } 
   
   
-  
- func1 {
+    func1 {
     print "executing function"
     }
-  }
+    }
 
 
-##functions are first class and support closures such as:
+## functions are first class and support closures such as:
 
 ```func returnFunction() {
   var outside = "outside";
