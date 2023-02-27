@@ -4,17 +4,17 @@ This is a language interpreter written for the toy language Lox.
 It features a REPL mode you can use by running ts-node-dev ./index.ts
 Or a file interpreter you can use by running ts-node-dev ./index.ts ""FILENAME""
 
-##Language features
+## Language features
 Declare variables with var
 ```var = "test"``` 
 
-##Supports OOP class based inheritance 
-```<code>class baseClass {
+## Supports OOP class based inheritance 
+``` <code> class baseClass {
   init(superstring1, string1, var2) {
   this.string1 = string1
   this.var2 = var2
   super.init(superstring1)
-  }```
+  } ```
   
  ``` func1 {
     print "executing function"
